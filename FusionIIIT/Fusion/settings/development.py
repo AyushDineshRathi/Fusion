@@ -2,19 +2,40 @@ from Fusion.settings.common import *
 
 DEBUG = True
 TEMPLATE_DEBUG = True 
-SECRET_KEY = '=&w9due426k@l^ju1=s1)fj1rnpf0ok8xvjwx+62_nc-f12-8('
+SECRET_KEY = os.environ.get(
+    "SECRET_KEY",
+    '=&w9due426k@l^ju1=s1)fj1rnpf0ok8xvjwx+62_nc-f12-8(',
+)
 
 ALLOWED_HOSTS = ['*']
 
-DATABASES = {
-     'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'fusionlab',
-        'HOST': os.environ.get("DB_HOST", default='localhost'),
-        'USER': 'fusion_admin',
-        'PASSWORD': 'hello123',
+if module_available('psycopg') or module_available('psycopg2'):
+    DATABASES = {
+         'default': {
+            'ENGINE': 'django.db.backends.postgresql_psycopg2',
+            'NAME': os.environ.get('DATABASE_NAME', 'fusionlab'),
+            'HOST': os.environ.get('DATABASE_HOST', os.environ.get("DB_HOST", 'localhost')),
+            'USER': os.environ.get('DATABASE_USER', 'fusion_admin'),
+            'PASSWORD': os.environ.get('DATABASE_PASSWORD', 'hello123'),
+            'PORT': os.environ.get('DATABASE_PORT', '5432'),
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': os.path.join(BASE_DIR, '..', 'fusion-dev.sqlite3'),
+        }
+    }
+
+CORS_ALLOWED_ORIGINS = os.environ.get(
+    "CORS_ALLOWED_ORIGINS",
+    "http://localhost:5173,http://127.0.0.1:5173",
+).split(",")
+CSRF_TRUSTED_ORIGINS = os.environ.get(
+    "CSRF_TRUSTED_ORIGINS",
+    "http://localhost:5173,http://127.0.0.1:5173",
+).split(",")
 
 
 REST_FRAMEWORK = {
@@ -27,15 +48,19 @@ REST_FRAMEWORK = {
     )
 }
 
-if DEBUG:
+if DEBUG and module_available('debug_toolbar'):
     MIDDLEWARE += (
         'debug_toolbar.middleware.DebugToolbarMiddleware',
     )
 
     INSTALLED_APPS += (
         'debug_toolbar',
+    )
+
+if DEBUG and module_available('django_extensions'):
+    INSTALLED_APPS += (
         'django_extensions',
-        )
+    )
 
 
     ###############################
@@ -52,6 +77,7 @@ if DEBUG:
 
     SHELL_PLUS_PRINT_SQL = True
 
+if DEBUG and module_available('debug_toolbar'):
     DEBUG_TOOLBAR_CONFIG = {
         'INTERCEPT_REDIRECTS': False,
     }

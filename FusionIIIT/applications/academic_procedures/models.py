@@ -1,7 +1,6 @@
 import datetime
 
 from django.db import models
-from django.contrib.postgres.fields import ArrayField
 from django.contrib.auth import get_user_model
 from applications.academic_information.models import Course, Student, Curriculum
 from applications.programme_curriculum.models import Course as Courses, Semester, CourseSlot, Batch

@@ -25,6 +25,21 @@ from notifications.models import Notification
 
 User = get_user_model()
 
+
+def _get_extra_info(user):
+    try:
+        return user.extrainfo
+    except ExtraInfo.DoesNotExist:
+        return None
+
+
+def _get_superuser_modules():
+    return {
+        field.name: True
+        for field in ModuleAccess._meta.get_fields()
+        if field.name not in ['id', 'designation']
+    }
+
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def login(request):
@@ -38,12 +53,15 @@ def login(request):
     design = HoldsDesignation.objects.select_related('user','designation').filter(working=user)
 
     designation=[]
-                
-    if str(user.extrainfo.user_type) == "student":
-        designation.append(str(user.extrainfo.user_type))
+    extra_info = _get_extra_info(user)
+
+    if user.is_superuser:
+        designation.append("superuser")
+    elif extra_info and str(extra_info.user_type) == "student":
+        designation.append(str(extra_info.user_type))
         
     for i in design:
-        if str(i.designation) != str(user.extrainfo.user_type):
+        if not extra_info or str(i.designation) != str(extra_info.user_type):
             designation.append(str(i.designation))
     
     resp = {
@@ -69,8 +87,8 @@ def auth_view(request):
     name = request.user.first_name +"_"+ request.user.last_name
     roll_no = request.user.username
 
-    extra_info = get_object_or_404(ExtraInfo, user=user)
-    last_selected_role = extra_info.last_selected_role
+    extra_info = _get_extra_info(user)
+    last_selected_role = extra_info.last_selected_role if extra_info else None
     
     designation_list = list(HoldsDesignation.objects.all().filter(working = request.user).values_list('designation'))
     designation_id = [designation for designations in designation_list for designation in designations]
@@ -79,9 +97,17 @@ def auth_view(request):
         name_ = get_object_or_404(Designation, id = id)
         designation_info.append(str(name_.name))
 
+    if user.is_superuser and "superuser" not in designation_info:
+        designation_info.insert(0, "superuser")
+
     accessible_modules = {}
+
+    if user.is_superuser:
+        accessible_modules["superuser"] = _get_superuser_modules()
     
     for designation in designation_info:
+        if designation == "superuser":
+            continue
         module_access = ModuleAccess.objects.filter(designation__iexact=designation).first()
         if module_access:
             filtered_modules = {}
@@ -98,7 +124,7 @@ def auth_view(request):
         'name': name,
         'roll_no': roll_no,
         'accessible_modules': accessible_modules,
-        'last_selected_role': last_selected_role
+        'last_selected_role': last_selected_role or ("superuser" if user.is_superuser else None)
     }
     
     return Response(data=resp,status=status.HTTP_200_OK)

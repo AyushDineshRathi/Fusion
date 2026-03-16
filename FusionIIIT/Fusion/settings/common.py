@@ -9,12 +9,25 @@ https://docs.djangoproject.com/en/1.11/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/1.11/ref/settings/
 '''
+import importlib.util
 import os
 
-from celery.schedules import crontab
+try:
+    from celery.schedules import crontab
+except ImportError:
+    # Allow local Django management commands to run without Celery installed.
+    def crontab(*args, **kwargs):
+        return {"args": args, "kwargs": kwargs}
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+def module_available(module_name):
+    try:
+        return importlib.util.find_spec(module_name) is not None
+    except ModuleNotFoundError:
+        return False
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
@@ -104,12 +117,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django.contrib.sites',
     'django.contrib.humanize',
-    'django_crontab',
-    'corsheaders',
-
     'applications.eis',
-    'notification',
-    'notifications',
     'applications.academic_procedures',
     'applications.examination',
     'applications.academic_information',
@@ -141,22 +149,31 @@ INSTALLED_APPS = [
     'applications.hr2',
     'applications.department',
     'applications.iwdModuleV2',
-    'allauth',
-    'allauth.account',
-    'allauth.socialaccount',
-    # 'allauth.socialaccount.providers.google',
-    'semanticuiforms',
     'applications.feeds.apps.FeedsConfig',
-    'pagedown',
-    'markdown_deux',
-    'django_cleanup.apps.CleanupConfig',
-    'django_unused_media',
     'rest_framework',
     'rest_framework.authtoken',
 ]
 
+OPTIONAL_APPS = [
+    ('django_crontab', 'django_crontab'),
+    ('corsheaders', 'corsheaders'),
+    ('notification', 'notification'),
+    ('notifications', 'notifications'),
+    ('allauth', 'allauth'),
+    ('allauth.account', 'allauth.account'),
+    ('allauth.socialaccount', 'allauth.socialaccount'),
+    ('semanticuiforms', 'semanticuiforms'),
+    ('pagedown', 'pagedown'),
+    ('markdown_deux', 'markdown_deux'),
+    ('django_cleanup', 'django_cleanup.apps.CleanupConfig'),
+    ('django_unused_media', 'django_unused_media'),
+]
+
+for module_name, app_name in OPTIONAL_APPS:
+    if module_available(module_name):
+        INSTALLED_APPS.append(app_name)
+
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -167,6 +184,9 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'Fusion.middleware.custom_middleware.user_logged_in_middleware',
 ]
+
+if module_available('corsheaders'):
+    MIDDLEWARE.insert(0, 'corsheaders.middleware.CorsMiddleware')
 
 ROOT_URLCONF = 'Fusion.urls'
 
@@ -230,12 +250,16 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
-AUTHENTICATION_BACKENDS = (
-    # Default backend -- used to login by username in Django admin
+AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",
-    # `allauth` specific authentication methods, such as login by e-mail
-    "allauth.account.auth_backends.AuthenticationBackend",
-)
+]
+
+if module_available('allauth.account'):
+    AUTHENTICATION_BACKENDS.append(
+        "allauth.account.auth_backends.AuthenticationBackend"
+    )
+
+AUTHENTICATION_BACKENDS = tuple(AUTHENTICATION_BACKENDS)
 
 
 # Internationalization

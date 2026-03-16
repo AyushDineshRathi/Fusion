@@ -1,69 +1,56 @@
+from django.urls import path
 
-from django.conf.urls import url
-from django.urls import path, include
-from . import views
-from django.contrib import admin
-from .views import update_authentication
-from .views import DownloadExcelView, updateGrades
-app_name = 'examination'
+from .views import (
+    AnnouncementListCreateView,
+    BatchResultExcelView,
+    CourseGradeSummaryView,
+    DownloadGradeTemplateView,
+    ExaminationDashboardView,
+    FacultyCourseSyncView,
+    GradeAuditLogView,
+    PreviewGradesCSVView,
+    PublishResultsView,
+    ReevaluationRequestView,
+    ReevaluationResolveView,
+    ReminderDispatchView,
+    ResultPublicationStatusView,
+    SeatingPlanView,
+    StudentMarksheetDownloadView,
+    StudentResultView,
+    StudentSemesterListView,
+    SubmitGradesView,
+    TranscriptView,
+    UpdateGradeView,
+    UploadGradesCSVView,
+    ValidateGradesView,
+    VerifyGradesView,
+)
+
+app_name = "examination"
 
 urlpatterns = [
-    url(r'^api/', include('applications.examination.api.urls')),
-    url(r'^$', views.exam, name='exam'),
-    
-    
-    url(r'submit/', views.submit, name='submit'),#old
-    # url(r'verify/', views.verify, name='verify'),#old
-#     url(r'publish/', views.publish, name='publish'),#old
-#     url(r'notReady_publish/', views.notReady_publish, name='notReady_publish'),#old
-#     url(r'timetable/', views.timetable, name='timetable'),#old
-    # entering and updataing grade
-#     path('entergrades/', views.entergrades, name='entergrades'),#old
-#     path('update_hidden_grades_multiple/', views.Updatehidden_gradesMultipleView.as_view(),
-     #     name='update_hidden_grades_multiple'),#old
-    # path('verifygrades/', views.verifygrades, name='verifygrades'),#old
-#     path('update_hidden_grades_multiple/', views.Updatehidden_gradesMultipleView.as_view(),
-#          name='update_hidden_grades_multiple'),#old
-#     path('submit_hidden_grades_multiple/', views.Submithidden_gradesMultipleView.as_view(),
-#          name='submit_hidden_grades_multiple'),#old
-    path('download_excel/', DownloadExcelView.as_view(), name='download_excel'),#old
-
-    #new
-    url(r'submitGrades/', views.submitGrades.as_view(), name='submitGrades'),#new
-#     url(r'submitEntergrades/', views.submitEntergrades, name='submitEntergrades'),#new
-#     path('submitEntergradesStoring/', views.submitEntergradesStoring.as_view(),#new
-#          name='submitEntergradesStoring'),
-    #new
-    url(r'updateGrades/', views.updateGrades, name='updateGrades'),#new
-    path('updateEntergrades/', views.updateEntergrades, name='updateEntergrades'),#new
-     path('moderate_student_grades/', views.moderate_student_grades.as_view(),#new
-         name='moderate_student_grades'),
-    # authenticate new
-#     path('authenticate/', views.authenticate, name='authenticate'), #new
-#     path('authenticategrades/', views.authenticategrades,
-#          name='authenticategrades'),#new
-#     path('update_authentication/', update_authentication.as_view(),
-#          name='update_authentication'),#new
-    # generate transcript new
-    path('generate_transcript/', views.generate_transcript,
-         name='generate_transcript'), #new
-    path('generate_transcript_form/', views.generate_transcript_form,
-         name='generate_transcript_form'),#new
-    # Announcement
-    url(r'announcement/', views.announcement, name='announcement'),#new
-    path('upload_grades/',views.upload_grades,name='upload_grades'),
-    path('message/',views.show_message,name='message'),
-    path('submitGradesProf/',views.submitGradesProf,name='submitGradesProf'),
-    path('download_template/',views.download_template,name='download_template'),
-    path('verifyGradesDean/',views.verifyGradesDean,name='verifyGradesDean'),
-    path('updateEntergradesDean/',views.updateEntergradesDean,name='updateEnterGradesDean'),
-    path('upload_grades_prof/',views.upload_grades_prof,name='upload_grades_prof'),
-    path('validateDean/',views.validateDean,name='validateDean'),
-    path('validateDeanSubmit/',views.validateDeanSubmit,name='validateDeanSubmit'),
-    path('downloadGrades/',views.downloadGrades,name='downloadGrades'),
-    path('generate_pdf/',views.generate_pdf,name='generate_pdf'),
-    path('generate-result/',views.generate_result,name='generate_pdf'),
-#     path('get_courses/',views.get_courses,name='get_courses'), 
-# path('checkresult/',views.checkresult,name='checkresult'),
-# path('grades_report/',views.grades_report,name='grades_report'),
+    path("api/dashboard/", ExaminationDashboardView.as_view(), name="dashboard"),
+    path("api/faculty/sync-registrations/", FacultyCourseSyncView.as_view(), name="sync-registrations"),
+    path("api/faculty/submit-grades/", SubmitGradesView.as_view(), name="submit-grades"),
+    path("api/faculty/preview-csv/", PreviewGradesCSVView.as_view(), name="preview-csv"),
+    path("api/faculty/upload-csv/", UploadGradesCSVView.as_view(), name="upload-csv"),
+    path("api/faculty/download-template/", DownloadGradeTemplateView.as_view(), name="download-template"),
+    path("api/faculty/course-summary/", CourseGradeSummaryView.as_view(), name="course-summary"),
+    path("api/dean/validate-grades/", ValidateGradesView.as_view(), name="validate-grades"),
+    path("api/dean/verify-grades/", VerifyGradesView.as_view(), name="verify-grades"),
+    path("api/dean/update-grade/", UpdateGradeView.as_view(), name="update-grade"),
+    path("api/acad-admin/publish-results/", PublishResultsView.as_view(), name="publish-results"),
+    path("api/acad-admin/publication-status/", ResultPublicationStatusView.as_view(), name="publication-status"),
+    path("api/acad-admin/generate-transcript/", TranscriptView.as_view(), name="generate-transcript"),
+    path("api/acad-admin/generate-result-excel/", BatchResultExcelView.as_view(), name="generate-result-excel"),
+    path("api/acad-admin/announcements/", AnnouncementListCreateView.as_view(), name="announcements"),
+    path("api/acad-admin/seating-plan/", SeatingPlanView.as_view(), name="seating-plan"),
+    path("api/acad-admin/reminders/", ReminderDispatchView.as_view(), name="reminders"),
+    path("api/student/results/semesters/", StudentSemesterListView.as_view(), name="student-semesters"),
+    path("api/student/results/", StudentResultView.as_view(), name="student-results"),
+    path("api/student/marksheet/", StudentMarksheetDownloadView.as_view(), name="student-marksheet"),
+    path("api/student/transcript/", TranscriptView.as_view(), name="student-transcript"),
+    path("api/student/reevaluation/", ReevaluationRequestView.as_view(), name="student-reevaluation"),
+    path("api/reevaluation/resolve/", ReevaluationResolveView.as_view(), name="reevaluation-resolve"),
+    path("api/audit-logs/", GradeAuditLogView.as_view(), name="audit-logs"),
 ]

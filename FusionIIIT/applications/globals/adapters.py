@@ -1,6 +1,15 @@
-from allauth.account.utils import perform_login
-from allauth.exceptions import ImmediateHttpResponse
-from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
+try:
+    from allauth.account.utils import perform_login
+    from allauth.exceptions import ImmediateHttpResponse
+    from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
+except ImportError:
+    perform_login = None
+
+    class ImmediateHttpResponse(Exception):
+        pass
+
+    class DefaultSocialAccountAdapter(object):
+        pass
 from django.contrib import messages
 from django.contrib.auth.models import User
 # from django.http import HttpResponse
@@ -10,6 +19,8 @@ from django.shortcuts import redirect, render
 
 class MySocialAccountAdapter(DefaultSocialAccountAdapter):
     def pre_social_login(self, request, sociallogin):
+        if perform_login is None:
+            raise ImmediateHttpResponse(render('account/exception.html'))
         user = sociallogin.user
         email = user.email
         if not email.split('@')[1] == 'iiitdmj.ac.in':

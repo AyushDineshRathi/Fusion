@@ -1,28 +1,40 @@
-version: "3.9"
 services:
-  db:
-    image: postgres:13-alpine
+  postgres:
+    image: postgres:15-alpine
     restart: always
-    volumes:
-      - ~/private/var/lib/postgresql:/var/lib/postgresql/data
+    env_file:
+      - .env
     environment:
-      - PGDATA=/var/lib/postgresql/data/some_name/ 
-      - POSTGRES_DB=fusionlab
-      - POSTGRES_USER=fusion_admin
-      - POSTGRES_PASSWORD=hello123
+      POSTGRES_DB: ${DATABASE_NAME}
+      POSTGRES_USER: ${DATABASE_USER}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
-  app:
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USER} -d ${DATABASE_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  backend:
     build:
       context: .
       dockerfile: Dockerfile
     restart: always
+    env_file:
+      - .env
+    environment:
+      DJANGO_SETTINGS_MODULE: ${DJANGO_SETTINGS_MODULE:-Fusion.settings.development}
     volumes:
       - .:/home/app
     ports:
-      - 8000:8000
-    command: /bin/bash docker-entrypoint.sh
-    environment:
-      - DB_HOST=db
+      - "8000:8000"
     depends_on:
-      - db
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:

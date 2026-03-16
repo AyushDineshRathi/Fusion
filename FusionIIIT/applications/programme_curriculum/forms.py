@@ -8,6 +8,7 @@ from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.models import User
 from applications.globals.models import (DepartmentInfo, Designation,ExtraInfo, Faculty, HoldsDesignation)
 from applications.filetracking.sdk.methods import *
+from django.db import OperationalError, ProgrammingError
 from django.db.models import Q
 from datetime import datetime
 from django.db.models import Max
@@ -390,9 +391,6 @@ class CourseProposalTrackingFile(ModelForm):
         return self.cleaned_data
 
 class CourseInstructorForm(forms.ModelForm):
-    # next_year = datetime.now().year +1
-    max_year = Batch.objects.aggregate(max_year=Max('year'))['max_year']
-    next_year = max_year + 1 if max_year else datetime.now().year + 1
     course_id = forms.ModelChoiceField(
         queryset=Course.objects.all(),
         label="Select Course",
@@ -408,7 +406,7 @@ class CourseInstructorForm(forms.ModelForm):
     )
 
     year = forms.ChoiceField(
-        choices=[('', 'Choose a year')] + [(year, year) for year in Batch.objects.values_list('year', flat=True).distinct()]+[(next_year, next_year)],
+        choices=[('', 'Choose a year')],
         label="Select Year",
         widget=forms.Select(attrs={'class': 'ui fluid search selection dropdown'})
     )
@@ -420,6 +418,26 @@ class CourseInstructorForm(forms.ModelForm):
     class Meta:
         model = CourseInstructor
         fields = ['course_id', 'instructor_id', 'year', 'semester_type']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['year'].choices = self._build_year_choices()
+
+    @staticmethod
+    def _build_year_choices():
+        try:
+            years = list(Batch.objects.values_list('year', flat=True).distinct())
+        except (ProgrammingError, OperationalError):
+            years = []
+
+        max_year = max(years) if years else None
+        next_year = max_year + 1 if max_year else datetime.now().year + 1
+        choices = [('', 'Choose a year')] + [(year, year) for year in years]
+
+        if next_year not in years:
+            choices.append((next_year, next_year))
+
+        return choices
 
     # def __init__(self, *args, **kwargs):
     #     super().__init__(*args, **kwargs)

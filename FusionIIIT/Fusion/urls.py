@@ -13,9 +13,7 @@ Including another URLconf
     1. Import the include() function: from django.conf.urls import url, include
     2. Add a URL to urlpatterns:  url(r'^blog/', include('blog.urls'))
 """
-
-import notifications.urls
-import debug_toolbar
+import importlib.util
 from django.conf import settings
 from django.conf.urls import include, url
 from django.conf.urls.static import static
@@ -26,22 +24,21 @@ from django.urls import path
 from applications.globals.views import RateLimitedPasswordResetView
 
 
+def module_available(module_name):
+    return importlib.util.find_spec(module_name) is not None
+
+
 urlpatterns = [
     url(r'^', include('applications.globals.urls')),
     url(r'^feeds/', include('applications.feeds.urls')),
     url(r'^admin/', admin.site.urls),
     url(r'^academic-procedures/', include('applications.academic_procedures.urls')),
     url(r'^aims/', include('applications.academic_information.urls')),
-    url(r'^notifications/', include('applications.notifications_extension.urls')),
     url(r'^estate/', include('applications.estate_module.urls')),
     url(r'^dep/', include('applications.department.urls')),
     url(r'^programme_curriculum/',include('applications.programme_curriculum.urls')),
     url(r'^iwdModuleV2/', include('applications.iwdModuleV2.urls')),
-    url(r'^__debug__/', include(debug_toolbar.urls)),
     url(r'^research_procedures/', include('applications.research_procedures.urls')),
-    url(r'^accounts/', include('allauth.urls')),
-
-
     url(r'^eis/', include('applications.eis.urls')),
     url(r'^mess/', include('applications.central_mess.urls')),
     url(r'^complaint/', include('applications.complaint_system.urls')),
@@ -95,3 +92,14 @@ urlpatterns = [
         name='password_reset_complete',
     ),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+if module_available('notifications'):
+    urlpatterns.insert(5, url(r'^notifications/', include('applications.notifications_extension.urls')))
+
+if module_available('debug_toolbar'):
+    import debug_toolbar
+
+    urlpatterns.insert(9, url(r'^__debug__/', include(debug_toolbar.urls)))
+
+if module_available('allauth'):
+    urlpatterns.insert(11, url(r'^accounts/', include('allauth.urls')))
